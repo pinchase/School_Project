@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="content container-fluid">
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h3 class="page-title">Doctor Specific Report</h3>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Doctor Specific Report</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card-block">
+                <h4 class="sub-title">Generate Report</h4>
+                <form method="get" action="">
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label">Select Doctor</label>
+                        <div class="col-sm-10">
+                            <select name="doctor_id" class="form-control" required>
+                                <option value="">Select Doctor</option>
+                                {% for doctor in doctors %}
+                                    <option value="{{ doctor.id }}" {% if selected_doctor_id == doctor.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ doctor.admin.first_name }} {{ doctor.admin.last_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label">From Date</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label">To Date</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-10">
+                            <button type="submit" class="btn btn-dark">Generate Report</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if error_message %}
+                <div class="alert alert-danger">
+                    {{ error_message }}
+                </div>
+            {% endif %}
+
+            {% if appointments %}
+                <div class="card card-table">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Appointment ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Appointment Date</th>
+                                        <th>Appointment Time</th>
+                                        <th>Status</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for appointment in appointments %}
+                                        <tr>
+                                            <td>{{ appointment.appointmentnumber }}</td>
+                                            <td>{{ appointment.fullname }}</td>
+                                            <td>{{ appointment.date_of_appointment }}</td>
+                                            <td>{{ appointment.time_of_appointment }}</td>
+                                            <td>
+                                                {% if appointment.status == '0' %}
+                                                    Not Updated Yet
+                                                {% else %}
+                                                    {{ appointment.status }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ appointment.created_at }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <form method="get" action="{% url 'doctor_specific_report' %}">
+                        <input type="hidden" name="doctor_id" value="{{ selected_doctor_id }}">
+                        <input type="hidden" name="start_date" value="{{ start_date }}">
+                        <input type="hidden" name="end_date" value="{{ end_date }}">
+                        <input type="hidden" name="download" value="true">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download Report
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %} 

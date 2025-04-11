@@ -1,0 +1,189 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="content container-fluid">
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col">
+        <h3 class="page-title">Completed Appointments</h3>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'doctor_home' %}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item active">Completed Appointments</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row">
+    <div class="col-xl-4 col-sm-6 col-12 d-flex">
+      <div class="card bg-one w-100">
+        <div class="card-body">
+          <div
+            class="db-widgets d-flex justify-content-between align-items-center"
+          >
+            <div class="db-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="db-info">
+              <h3>{{ total_completed }}</h3>
+              <h6>Total Completed</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-sm-6 col-12 d-flex">
+      <div class="card bg-two w-100">
+        <div class="card-body">
+          <div
+            class="db-widgets d-flex justify-content-between align-items-center"
+          >
+            <div class="db-icon">
+              <i class="fas fa-pills"></i>
+            </div>
+            <div class="db-info">
+              <h3>{{ total_prescriptions }}</h3>
+              <h6>Prescriptions Given</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-sm-6 col-12 d-flex">
+      <div class="card bg-three w-100">
+        <div class="card-body">
+          <div
+            class="db-widgets d-flex justify-content-between align-items-center"
+          >
+            <div class="db-icon">
+              <i class="fas fa-vial"></i>
+            </div>
+            <div class="db-info">
+              <h3>{{ total_tests }}</h3>
+              <h6>Tests Recommended</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter Section -->
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-body">
+          <form method="get" class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <input
+                  type="text"
+                  class="form-control"
+                  name="search"
+                  placeholder="Search by name or appointment number"
+                  value="{{ search_query }}"
+                />
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <input
+                  type="date"
+                  class="form-control"
+                  name="start_date"
+                  value="{{ start_date }}"
+                  placeholder="From Date"
+                />
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <input
+                  type="date"
+                  class="form-control"
+                  name="end_date"
+                  value="{{ end_date }}"
+                  placeholder="To Date"
+                />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-block">
+                Search
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments Table -->
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="card card-table">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover table-center mb-0">
+              <thead>
+                <tr>
+                  <th>Appointment ID</th>
+                  <th>Patient Name</th>
+                  <th>Appointment Date</th>
+                  <th>Prescription</th>
+                  <th>Recommended Tests</th>
+                  <th>Doctor's Remarks</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appointment in patientdetails1 %}
+                <tr>
+                  <td>{{ appointment.appointmentnumber }}</td>
+                  <td>{{ appointment.fullname }}</td>
+                  <td>{{ appointment.date_of_appointment }}</td>
+                  <td>
+                    {% if appointment.prescription %}
+                    <span class="badge badge-success">Given</span>
+                    {% else %}
+                    <span class="badge badge-warning">Not Given</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if appointment.recommendedtest %}
+                    <span class="badge badge-success">Recommended</span>
+                    {% else %}
+                    <span class="badge badge-warning">Not Recommended</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ appointment.remark|truncatechars:30 }}</td>
+                  <td class="text-right">
+                    <div class="actions">
+                      <a
+                        href="{% url 'patientappointmentdetails' appointment.id %}"
+                        class="btn btn-sm bg-success-light mr-2"
+                      >
+                        <i class="fas fa-eye"></i> View Details
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center">
+                    No completed appointments found
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
