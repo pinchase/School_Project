@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from dasapp.models import CustomUser
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+from dasapp.models import DoctorReg
 User = get_user_model()
 def BASE(request):
     return render(request,'base.html')
@@ -101,3 +104,47 @@ def CHANGE_PASSWORD(request):
           messages.success(request,'Current Password wrong!!!')
           return redirect("change_password")
      return render(request,'change-password.html')
+
+class CustomPasswordResetView(PasswordResetView):
+    def form_valid(self, form):
+        email = form.cleaned_data['email']
+        new_password1 = self.request.POST.get('new_password1')
+        new_password2 = self.request.POST.get('new_password2')
+        
+        try:
+            # First check if the email exists in DoctorReg
+            doctor = DoctorReg.objects.get(admin__email=email)
+            user = doctor.admin  # Get the associated CustomUser
+            
+            if new_password1 and new_password2 and new_password1 == new_password2:
+                # Update the password
+                user.set_password(new_password1)
+                user.save()
+                
+                messages.success(self.request, 'Password has been reset successfully. Please login with your new password.')
+                return redirect('login')
+            else:
+                messages.error(self.request, 'Passwords do not match.')
+                return redirect('password_reset')
+        except DoctorReg.DoesNotExist:
+            messages.error(self.request, 'No doctor found with this email address.')
+            return redirect('password_reset')
+        except Exception as e:
+            messages.error(self.request, f'An error occurred: {str(e)}')
+            return redirect('password_reset')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Invalid form submission. Please check your input.')
+        return redirect('password_reset')
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+        return response
+
+    def form_invalid(self, form):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Passwords do not match or are invalid'})
+        return super().form_invalid(form)
