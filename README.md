@@ -9,7 +9,9 @@ A Django-based doctor appointment system with SMS notifications.
 - SMS notifications for password reset
 - Admin dashboard
 - Doctor dashboard
-- Patient dashboard
+- Patients do not require to register to make appointments.
+- patients make appointments with their preffered doctors at the time of their leisure.
+- 
 
 ## Setup Instructions
 
