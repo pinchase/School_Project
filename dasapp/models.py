@@ -40,11 +40,11 @@ class DoctorReg(models.Model):
 class Appointment(models.Model):
     appointmentnumber = models.IntegerField(default=0)
     fullname = models.CharField(max_length=250)
-    mobilenumber = models.CharField(max_length=11)
+    mobilenumber = models.CharField(max_length=10)
     email = models.EmailField(max_length=100)
     
-    date_of_appointment = models.DateField()  # Changed from CharField
-    time_of_appointment = models.TimeField()  # Changed from CharField
+    date_of_appointment = models.DateField()  
+    time_of_appointment = models.TimeField()  
     
     doctor_id = models.ForeignKey(DoctorReg, on_delete=models.CASCADE)
     additional_msg = models.TextField(blank=True)
@@ -58,7 +58,7 @@ class Appointment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        # Exclude self in conflict check to allow updates
+        
         conflict = Appointment.objects.filter(
             doctor_id=self.doctor_id,
             date_of_appointment=self.date_of_appointment,

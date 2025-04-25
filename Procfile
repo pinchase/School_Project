@@ -1,0 +1,1 @@
+web:gunicorn docappsystem.wsgi --log-file-
