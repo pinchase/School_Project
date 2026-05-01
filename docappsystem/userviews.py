@@ -1,10 +1,11 @@
 from django.shortcuts import render,redirect,HttpResponse,get_object_or_404
 from dasapp.models import DoctorReg,Specialization,CustomUser,Appointment,Page
-import random
 from datetime import datetime
 from django.contrib import messages
 from django.db.models import Q
-from dasapp.utils import send_sms
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
+from dasapp.utils import normalize_phone_number, send_sms
 
 
 
@@ -29,16 +30,9 @@ def create_appointment(request):
     page = Page.objects.all()
 
     if request.method == "POST":
-        appointmentnumber = random.randint(100000000, 999999999)
         fullname = request.POST.get('fullname')
         email = request.POST.get('email')
-        mobilenumber = request.POST.get('mobilenumber')
-        # Format phone number to E.164 format
-        if not mobilenumber.startswith('+'):
-            if mobilenumber.startswith('0'):
-                mobilenumber = '+254' + mobilenumber[1:]  # Assuming Kenya numbers
-            else:
-                mobilenumber = '+254' + mobilenumber  # Add country code if missing
+        mobilenumber = normalize_phone_number(request.POST.get('mobilenumber'))
         date_of_appointment = request.POST.get('date_of_appointment')
         time_of_appointment = request.POST.get('time_of_appointment')
         doctor_id = request.POST.get('doctor_id')
@@ -55,19 +49,21 @@ def create_appointment(request):
             messages.error(request, "Invalid date format")
             return redirect('appointment')
 
-        doc_instance = DoctorReg.objects.get(id=doctor_id)
+        doc_instance = get_object_or_404(DoctorReg, id=doctor_id)
 
-        # Save appointment
-        appointmentdetails = Appointment.objects.create(
-            appointmentnumber=appointmentnumber,
-            fullname=fullname,
-            email=email,
-            mobilenumber=mobilenumber,
-            date_of_appointment=date_of_appointment,
-            time_of_appointment=time_of_appointment,
-            doctor_id=doc_instance,
-            additional_msg=additional_msg
-        )
+        try:
+            appointmentdetails = Appointment.objects.create(
+                fullname=fullname,
+                email=email,
+                mobilenumber=mobilenumber,
+                date_of_appointment=date_of_appointment,
+                time_of_appointment=time_of_appointment,
+                doctor_id=doc_instance,
+                additional_msg=additional_msg,
+            )
+        except (ValidationError, IntegrityError) as exc:
+            messages.error(request, f"Appointment could not be booked: {exc}")
+            return redirect('appointment')
 
         # Send SMS confirmation
         sms_message = f"Hello {fullname}, your appointment with Dr. {doc_instance.admin.first_name} {doc_instance.admin.last_name} is confirmed for {date_of_appointment} at {time_of_appointment}."
@@ -80,7 +76,7 @@ def create_appointment(request):
         except Exception as e:
             messages.error(request, f"Appointment saved, but SMS failed to send. Error: {str(e)}")
 
-        return redirect('appointment')
+        return redirect('viewappointmentdetails', id=appointmentdetails.id)
 
     context = {'doctorview': doctorview, 'page': page}
     return render(request, 'appointment.html', context)
@@ -92,7 +88,7 @@ def User_Search_Appointments(request):
     if query:
         patient = Appointment.objects.filter(
             Q(fullname__icontains=query) | Q(appointmentnumber__icontains=query)
-        )
+        ).order_by('-created_at')
         messages.info(request, f"Search results for '{query}'")
     else:
         patient = None
@@ -109,7 +105,6 @@ def View_Appointment_Details(request,id):
     }
 
     return render(request,'user_appointment-details.html',context)
-
 
 
 

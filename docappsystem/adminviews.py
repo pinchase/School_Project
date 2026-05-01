@@ -1,13 +1,14 @@
 from django.shortcuts import render,redirect,HttpResponse
-from django.contrib.auth.decorators import login_required
 from dasapp.models import Specialization,DoctorReg,Appointment,Page
 from django.contrib import messages
 from datetime import datetime
+from dasapp.decorators import admin_required
+from dasapp.utils import normalize_phone_number
 
-@login_required(login_url='/')
+@admin_required
 def ADMINHOME(request):
-    doctor_count = DoctorReg.objects.all().count
-    specialization_count = Specialization.objects.all().count
+    doctor_count = DoctorReg.objects.all().count()
+    specialization_count = Specialization.objects.all().count()
     context = {
         'doctor_count':doctor_count,
         'specialization_count':specialization_count,
@@ -15,7 +16,7 @@ def ADMINHOME(request):
     } 
     return render(request,'admin/adminhome.html',context)
 
-@login_required(login_url='/')
+@admin_required
 def SPECIALIZATION(request):
     if request.method == "POST":
         specializationname = request.POST.get('specializationname')
@@ -27,7 +28,7 @@ def SPECIALIZATION(request):
         return redirect("add_specilizations")
     return render(request,'admin/specialization.html')
 
-@login_required(login_url='/')
+@admin_required
 def MANAGESPECIALIZATION(request):
     specialization = Specialization.objects.all()
     context = {'specialization':specialization,
@@ -35,6 +36,7 @@ def MANAGESPECIALIZATION(request):
     }
     return render(request,'admin/manage_specialization.html',context)
 
+@admin_required
 def DELETE_SPECIALIZATION(request,id):
     specialization = Specialization.objects.get(id=id)
     specialization.delete()
@@ -42,7 +44,7 @@ def DELETE_SPECIALIZATION(request,id):
     
     return redirect('manage_specilizations')
 
-login_required(login_url='/')
+@admin_required
 def UPDATE_SPECIALIZATION(request,id):
     specialization = Specialization.objects.get(id=id)
     
@@ -52,8 +54,7 @@ def UPDATE_SPECIALIZATION(request,id):
 
     return render(request,'admin/update_specialization.html',context)
 
-login_required(login_url='/')
-
+@admin_required
 def UPDATE_SPECIALIZATION_DETAILS(request):
         if request.method == 'POST':
           sep_id = request.POST.get('sep_id')
@@ -65,7 +66,7 @@ def UPDATE_SPECIALIZATION_DETAILS(request):
           return redirect('manage_specilizations')
         return render(request, 'admin/update_specialization.html')
 
-@login_required(login_url='/')
+@admin_required
 def DoctorList(request):
     doctorlist = DoctorReg.objects.all()
     context = {'doctorlist':doctorlist,
@@ -73,6 +74,7 @@ def DoctorList(request):
     }
     return render(request,'admin/doctor-list.html',context)
 
+@admin_required
 def ViewDoctorDetails(request,id):
     doctorlist1=DoctorReg.objects.filter(id=id)
     context={'doctorlist1':doctorlist1
@@ -81,6 +83,7 @@ def ViewDoctorDetails(request,id):
 
     return render(request,'admin/doctor-details.html',context)
 
+@admin_required
 def ViewDoctorAppointmentList(request,id):
     patientdetails=Appointment.objects.filter(doctor_id=id)
     context={'patientdetails':patientdetails
@@ -89,6 +92,7 @@ def ViewDoctorAppointmentList(request,id):
 
     return render(request,'admin/doctor_appointment_list.html',context)
 
+@admin_required
 def ViewPatientDetails(request,id):
     patientdetails=Appointment.objects.filter(id=id)
     context={'patientdetails':patientdetails
@@ -97,6 +101,7 @@ def ViewPatientDetails(request,id):
 
     return render(request,'admin/patient_appointment_details.html',context)
 
+@admin_required
 def Search_Doctor(request):
     if request.method == "GET":
         query = request.GET.get('query', '')
@@ -106,9 +111,10 @@ def Search_Doctor(request):
             messages.info(request, "Search against " + query)
             return render(request, 'admin/search-doctor.html', {'searchdoc': searchdoc, 'query': query})
         else:
-            print("No Record Found")
+            messages.info(request, "No record found")
             return render(request, 'admin/search-doctor.html', {})
 
+@admin_required
 def Doctor_Between_Date_Report(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -129,7 +135,7 @@ def Doctor_Between_Date_Report(request):
     return render(request, 'admin/doctor-between-date.html', {'doctor': doctor,'start_date':start_date,'end_date':end_date})
 
 
-@login_required(login_url='/')
+@admin_required
 def WEBSITE_UPDATE(request):
     page = Page.objects.all()
     context = {"page":page,
@@ -137,7 +143,7 @@ def WEBSITE_UPDATE(request):
     }
     return render(request,'admin/website.html',context)
 
-@login_required(login_url='/')
+@admin_required
 def UPDATE_WEBSITE_DETAILS(request):
     if request.method == 'POST':
           web_id = request.POST.get('web_id')
@@ -145,7 +151,7 @@ def UPDATE_WEBSITE_DETAILS(request):
           address = request.POST['address']
           aboutus = request.POST['aboutus']
           email = request.POST['email']
-          mobilenumber = request.POST['mobilenumber']
+          mobilenumber = normalize_phone_number(request.POST['mobilenumber'])
           page =Page.objects.get(id=web_id)
           page.pagetitle = pagetitle
           page.address = address
@@ -157,6 +163,7 @@ def UPDATE_WEBSITE_DETAILS(request):
           return redirect('website_update')
     return render(request,'admin/website.html')
 
+@admin_required
 def Doctor_Specific_Report(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -232,4 +239,3 @@ def Doctor_Specific_Report(request):
         'end_date': end_date,
         'selected_doctor_id': doctor_id
     })
-

@@ -4,13 +4,28 @@ import re
 
 logger = logging.getLogger(__name__)
 
+
+def normalize_phone_number(phone_number, default_country_code='+254'):
+    phone_number = (phone_number or '').strip().replace(' ', '').replace('-', '')
+    if not phone_number:
+        return ''
+    if phone_number.startswith('+'):
+        return phone_number
+    if phone_number.startswith('0'):
+        return f'{default_country_code}{phone_number[1:]}'
+    return f'{default_country_code}{phone_number}'
+
+
+def is_valid_phone_number(phone_number):
+    return bool(re.match(r'^\+[1-9]\d{1,14}$', phone_number or ''))
+
 def send_sms(to_phone, message, sender_name="LOcalH"):
     """
     Send SMS using Twilio if configured, otherwise log the message
     """
     try:
         # Validate phone number format
-        if not re.match(r'^\+[1-9]\d{1,14}$', to_phone):
+        if not is_valid_phone_number(to_phone):
             error_msg = f"Invalid phone number format: {to_phone}. Must be in E.164 format (e.g., +254XXXXXXXXX)"
             logger.error(error_msg)
             return error_msg

@@ -1,6 +1,5 @@
 from django.shortcuts import render,redirect,HttpResponse
-from dasapp.EmailBackEnd import EmailBackEnd
-from django.contrib.auth import  logout,login
+from django.contrib.auth import authenticate, logout,login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from dasapp.models import CustomUser
@@ -22,10 +21,11 @@ def doLogout(request):
 
 def doLogin(request):
     if request.method == 'POST':
-        user = EmailBackEnd.authenticate(request,
-                                         username=request.POST.get('email'),
-                                         password=request.POST.get('password')
-                                         )
+        user = authenticate(
+            request,
+            username=request.POST.get('email'),
+            password=request.POST.get('password'),
+        )
         if user!=None:
             login(request,user)
             user_type = user.user_type
@@ -34,7 +34,7 @@ def doLogin(request):
             elif user_type == '2':
                  return redirect('doctor_home')
             elif user_type == '3':
-                return HttpResponse("This is User panel")
+                return redirect('index')
             
             
         else:
@@ -45,7 +45,7 @@ def doLogin(request):
             return redirect('login')
 
 
-login_required(login_url='/')
+@login_required(login_url='/')
 def PROFILE(request):
     user = CustomUser.objects.get(id = request.user.id)
     context = {
@@ -60,13 +60,12 @@ def PROFILE_UPDATE(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         username = request.POST.get('username')
-        print(profile_pic)
-        
-
         try:
             customuser = CustomUser.objects.get(id = request.user.id)
             customuser.first_name = first_name
             customuser.last_name = last_name
+            customuser.email = email
+            customuser.username = username
             
 
             
@@ -76,11 +75,12 @@ def PROFILE_UPDATE(request):
             messages.success(request,"Your profile has been updated successfully")
             return redirect('profile')
 
-        except:
+        except Exception:
             messages.error(request,"Your profile updation has been failed")
     return render(request, 'profile.html')
 
 
+@login_required(login_url = '/')
 def CHANGE_PASSWORD(request):
      context ={}
      ch = User.objects.filter(id = request.user.id)
@@ -91,10 +91,14 @@ def CHANGE_PASSWORD(request):
      if request.method == "POST":        
         current = request.POST["cpwd"]
         new_pas = request.POST['npwd']
+        confirm_password = request.POST.get('confirm_password') or request.POST.get('cpwd2') or new_pas
         user = User.objects.get(id = request.user.id)
         un = user.username
         check = user.check_password(current)
         if check == True:
+          if new_pas != confirm_password:
+            messages.error(request,'New passwords do not match.')
+            return redirect("change_password")
           user.set_password(new_pas)
           user.save()
           messages.success(request,'Password Change  Succeesfully!!!')
